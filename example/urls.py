@@ -13,35 +13,22 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url, include
+from django.conf.urls import url
 from django.contrib import admin
-from django.views.generic.base import TemplateView
 from django.conf.urls.static import static
 from django.conf import settings
-from .views import Home
+from django.views.decorators.csrf import csrf_exempt
+from . import views
 
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
 
-    #url(r'^d4a/', include('djangoforandroid.d4a.urls')),
-    url(r'^d4a/', include('djangoforandroid.framework.urls')),
 
-    #url(r'^$', TemplateView.as_view(template_name="home.html"), name="home"),
-    url(r'^$', Home.as_view(), name="home"),
-
-
-    url(r'^page1/$', TemplateView.as_view(template_name="page_fonts.html"), name="page_fonts"),
-    url(r'^page2/$', TemplateView.as_view(template_name="page_slider.html"), name="page_slider"),
-    url(r'^page3/$', TemplateView.as_view(template_name="page_dialog.html"), name="page_dialog"),
-    url(r'^page4/$', TemplateView.as_view(template_name="page_instore.html"), name="page_instore"),
-
-
-
-    url(r'^splash/$', TemplateView.as_view(template_name="splash.html"), name="splash"),
-
-
-    #url(r'^iframe/$', TemplateView.as_view(template_name="iframe.html"), name="iframe"),
+    url(r'webpage1/$', views.webpage1, name="webpage1"),
+    url(r'webpage2/$', views.webpage2, name="webpage2"),
+    url(r'webpage3/$', views.webpage3, name="webpage3"),
+    url(r'webpage4/$', csrf_exempt(views.webpage4), name='webpage4'),
 
 
 

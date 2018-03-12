@@ -45,9 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    'djangoforandroid.builder',
-    'djangoforandroid.framework'
+#
+#    'djangoforandroid.builder',
+#    'djangoforandroid.framework'
 
 #    'djangoforandroid.d4a', #optional
 #    'djangoforandroid.mdl', #optional
