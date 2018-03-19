@@ -59,15 +59,12 @@ function addRow(pname, pid){
 /*deletes row from running-processes table, corresponding to the "Stop" button that was pressed*/
 function deleteRow(r) {
 	
-	//get row number from the "delete" button that was pressed
    var rowNumber = r.parentNode.parentNode.rowIndex;
    
-   //delete the row element and update the table
    document.getElementById("processesTable").deleteRow(rowNumber);
-	updateRows();
 	
-	//decrement number of processes
 	numProcesses = numProcesses - 1;
+	updateRows();
 }
 
 
