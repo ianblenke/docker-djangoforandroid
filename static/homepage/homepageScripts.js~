@@ -20,6 +20,52 @@ var procRows = {}; //keeps up with row-process pairs { KEYS: processname, VALUES
 
 
 
+/****************************************************************************************************
+Notes:
+
+	1) USE CONSOLE.LOG TO DEBUG!!!!!!!!!!!!!
+	2) Everything works perfectly when ran from inside the task manager
+	3) You're current issue is inside DJANGO....
+		- Django keeps sending the zombie process to javascript, which doesn't exist in procRows so you get undefined values
+		- The reason Django keeps sending it is because of the "if closed or zombie" statement
+		- To solve this, either change the if statement or better yet, go to "https://mail.python.org/pipermail/tutor/2003-December/026748.html"
+			and read the last three things on that page to ignore (SIG_IGN) the zombie processes.
+		- You can also read up on flag controls in subprocess module
+	4) Right now the program works as expected for the first "bad_close." The problem starts after that bc it is now a zombie process
+		and will keep sending that pid from Django. WATCH THE CONSOLE while troubleshooting
+	
+*****************************************************************************************************/
+
+
+
+
+
+function checkstatuses(){
+	
+   setInterval(function(){
+   
+      $.ajax({ type:"GET", url: "checkprocesses/", dataType: "json", success: function(data){
+			
+			if (data.closed.length > 0){
+				console.log('********Django sent back a badly closed process************');
+				for(var i = 0; i < data.closed.length; ++i){
+					//delete badly closed pid from table
+					
+					deleteRow(0, data.closed[i]);
+
+					//re-enable button
+					
+				}
+				
+			}
+        
+      }});
+  }, 15000);
+};
+
+checkstatuses();
+
+
 
 
 /*adds new row to running-processes table*/
@@ -55,17 +101,68 @@ function addRow(pname, pid){
 
 
 
+/*searches procRows for the process 'name' corresponding to 'pid'*/
+function pidToName(pid) {
+	
+		
+		for (var item in procRows){
+
+			if (procRows[item][1] == String(pid)) {    
+				return procRows[item][0];                //return the name of that item
+			}		
+		}
+		
+		
+		return null;                                   //return null if pid not found
+}
+
+
+
+
 
 /*deletes row from running-processes table, corresponding to the "Stop" button that was pressed*/
-function deleteRow(r) {
+function deleteRow(r, bad_pid = null) {
 	
-   var rowNumber = r.parentNode.parentNode.rowIndex;
+	
+	var rowNumber;	    //table row corresponding to the target process
+	
+	//set rowNumber
+	if(bad_pid === null){
+		
+		//gotten from the "delete" button that was pressed
+   	rowNumber = r.parentNode.parentNode.rowIndex;
+   	
+   }
+   else{
+   	
+   	//gotten directly from parameter 
+   	//this was the result of a 'bad close' called from checkstatuses())
+   	var bad_proc = pidToName(bad_pid);                   
+   	//re-enable start button
+		//document.getElementById('open' + bad_proc).disabled = false;                
+   	console.log('bad_proc (nameof bad process): ' + bad_proc);
+		rowNumber = procRows[bad_proc][2];                                   
+		console.log('target table rowNumber set to: ' + rowNumber);
+		
+   }                                                                       
+   console.log('passed setting rowNumber()');
    
-   document.getElementById("processesTable").deleteRow(rowNumber);
+   
+   //delete the row element and update the table
+   document.getElementById("processesTable").deleteRow(rowNumber);         
+   console.log('passed deleteRow()');	
 	
-	numProcesses = numProcesses - 1;
-	updateRows();
+	//decrement number of processes
+	numProcesses -= 1;
+	
+	updateRows();                                                           
+	console.log('passed updateRows()');
+	
+	
+	var procRowsLen = Object.keys(procRows).length;                         
+	console.log('numProcess: ' + String(numProcesses) + '  ' + 'procrowslen: ' + procRowsLen);
 }
+
 
 
 
@@ -74,16 +171,23 @@ function deleteRow(r) {
 function updateRows(){
 	procRows = {};                                                                          //delete current processes list
 	var row;
-	
-	for(var i = 0; i < numProcesses; ++i){
+	console.log('inside updateRows()');
+	var tableSize = document.getElementById("processesTable").rows.length;
+	tableSize -= 1; //bc the header row doesn't count
+	console.log('tablesize: ' + String(tableSize));
+	for(var i = 0; i < tableSize; ++i){
 		
 		var name = document.getElementById("processesTable").rows[i+1].cells[0].innerHTML;  //read process names directly from table
 		var pid = document.getElementById("processesTable").rows[i+1].cells[1].innerHTML;   //read pids directly from table
 		row = i+1;
-		procRows[name.replace(/\s/g, '')] = [name, pid, row];                               //re-write processes list 
+		procRows[name.replace(/\s/g, '')] = [name, pid, row];                               //re-write processes list
+		console.log('procRows[' + row + ']' + 'after ' + procRows[name.replace(/\s/g, '')]); 
 	}
-	
+	console.log('leaving updateRows');
 }
+
+
+
 
 
 function runProcess1(){
@@ -140,7 +244,7 @@ function runProcess2(){
 
 
 
-/* Implements all process-closing procedures*/
+/* Implements all process-closing procedures for 'process'*/
 function closeProcess(process){
 	
 	//re-enable start button
@@ -167,5 +271,6 @@ function closeProcess(process){
 		}
 	});
 }
+
 
 

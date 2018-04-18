@@ -28,6 +28,7 @@ urlpatterns = [
     url(r'androidprocessmanager/$', views.androidprocessmanager, name="androidprocessmanager"),
     url(r'startprocess/$', csrf_exempt(views.startprocess), name="startprocess"),
     url(r'stopprocess/$', csrf_exempt(views.stopprocess), name='stopprocess'),
+    url(r'checkprocesses/$', views.checkProcessStatuses, name='checkProcessStatuses'),
 
 
 
