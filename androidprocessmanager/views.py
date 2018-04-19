@@ -1,11 +1,35 @@
+"""NOTES:
+        - Downloaded Go v1.10
+        - Downloaded gotty
+        - ***You have to first create an env and then set the path in order to use gotty 
+            (-->  $GOBIN/gotty && export PATH="$PATH:$GOBIN" && source ~/.profile)
+        - 'exec' command is required in each 'scripts' dict entry 
+            It serves to close the shell and hand its pid to the child
+        - When starting process with 'screen', use -D to keep it attached and able to be
+            discovered by python
+        - Useful debugging commands
+            - sudo netstat -plnt (check status of all ports)
+            - sudo killall tor
+            - sudo kill -9 pid
+        
+TODO's:
+
+        1. Create a way to restart something that has stopped
+        2. Standardize everything so that we only have to add a txt file
+            with the shell command(s)/scripts into a "services" folder
+            andeverything else is taken care of
+                i.e. adding myScript.txt to the 'services' folder will 
+                automatically create a new button in the control hub
+                that runs the script specified in myScripts.txt
+        
+"""
+
+
 from django.shortcuts import render
 from django.http import JsonResponse
 from subprocess import Popen, PIPE
-#from django.views.decorators.csrf import csrf_exempt
 import psutil
-from threading import Thread
 import signal
-#import time
 
 
 
@@ -15,78 +39,18 @@ procs = {}
 
 #dict of scripts (in services folder)
 #{KEYS: simplified script name, VALUES: actual script (string)}
-scripts = {"tor": "exec screen -D -m -S tor tor", "gotty": "exec gotty -w --port ${PORT:-8090} screen -r -d tor" } 
-
-#Separate process used to scan running processes and check their statuses
-processScanner = None
-
-
-
-"""NOTES:
-        - Downloaded Go v1.10
-        - Downloaded gotty
-        - 'exec' required to keep shell (opened by Popen()) open
-        - When starting process with 'screen', use -D to keep it attached and able to be
-            discovered by python
-        - You have to first create an env and then set the path to use gotty 
-            (-->  $GOBIN/gotty && export PATH="$PATH:$GOBIN" && source ~/.profile)
-        
-        - sudo netstat -plnt (check status of all ports)
-        - sudo killall tor
-        
-TODO's:
-
-        1. Create separate thread/process to monitor status of all processes
-            and have a way to restart somethingthat has stopped
-        2. Standardize everything so that we only have to add a txt file
-            with the shell command(s)/scripts into a "services" folder
-            andeverything else is taken care of
-                i.e. adding myScript.txt to the 'services' folder will 
-                automatically create a new button in the control hub
-                that runs the script specified in myScripts.txt
-        3. CLEANUP CODE!! (especially javascript)
-        
-"""
-
-
-def checkProcessStatuses(request):
-    """
-        Uses a thread to continuously check the status of all processes in procs.
-        It deletes them from the table and procs list if they are not found in ps (running processes).
-        
-        Notes: 
-            
-    """
-    
-    """*****The problem is currently here (see javascript for more details).*****"""
-    
-    closed = []
-    for process in list(procs.keys()):       #search all processes in the current list
-        p = psutil.Process(process)
-
-        print(p.pid, ':', p.as_dict(attrs=['status']))
-        if process not in psutil.pids() or p.status() == psutil.STATUS_ZOMBIE:         #if the process is no longer running 
-            closed.append(process)
-            print('Bad close of pid', process)
-        
-    #return list of closed pids
-    return JsonResponse({'closed': closed})
+scripts = {"tor": "exec screen -D -m -S tor tor", 
+           "gotty": "exec gotty -w --port ${PORT:-8090} screen -r -d tor" } 
 
 
 
 
-def androidprocessmanager(request):
-    
-    global processScanner    
 
-    #start the process scanner thread if it hasn't been already
-#    if processScanner is None:
-#        processScanner = Thread(name = 'Process Scanner', target=checkProcessStatuses)
-#        processScanner.start()
-    
-    
+def androidprocessmanager(request):    
     """return home page"""
+    
     return render(request, "androidprocessmanager.html", {})
+
 
 
 
@@ -110,7 +74,6 @@ def startprocess(request):
     return JsonResponse(data)
     
     
-
 
 
 
@@ -157,4 +120,33 @@ def stopprocess(request, badclose = None):
     #return killed pid
     data = {'pid': targetPID}
     return JsonResponse(data)
+
+
+
+
+
+def checkProcessStatuses(request):
+    """
+        Crosschecks all processes in 'procs' list with those in psutil.pids().
+        It deletes them from the UI table and from 'procs' list if they are zombies or
+        they are not found in ps (running processes).            
+    """
     
+    
+    closed = []
+    for process in list(procs.keys()):                                                 #search all processes in the current list
+        p = psutil.Process(process)
+
+        print(p.pid, ':', p.as_dict(attrs=['status']))
+        if process not in psutil.pids() or p.status() == psutil.STATUS_ZOMBIE:         #process is zombie or no longer running 
+            closed.append(process)
+            print('Bad close of pid', process)
+    
+    
+    #erase closed pids from 'procs' list
+    for process in closed:
+        del procs[process]
+    
+    
+    #return list of closed pids
+    return JsonResponse({'closed': closed})    
