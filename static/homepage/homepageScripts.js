@@ -11,8 +11,7 @@
 *		pidtoname(pid)                    //returns the name of a service corresponding to PID 'pid'
 *		deleteRow(row, bad_pid = null)    //deletes row 'row' from table (or bad_pid in the case of a bad close)
 *		updateRows()                      //updates the values in procRows
-*		runProcess1()                     //starts a service (tor in this case)
-*		runProcess2()                     //starts a service (gotty in this case) 
+*		runProcess(elem)                     //starts a service specified by the button pressed  
 *		closeProcess(process)             //closes process 'process'
 *
 *
@@ -21,7 +20,8 @@
 * - USE CONSOLE.LOG TO DEBUG!!!
 * - This script can correctly handle services that are opened/closed from within the user interface ("good closes")
 * - This script can correctly handle services that are closed from outside the user interface ("bad closes")
-* - You're current job is to make it correctly handle services STARTED from outside the user interface ("bad starts")
+* - The script does NOT correctly handle services STARTED from outside the user interface ("bad starts")
+* - Your job is to test the UI using more complicated scripts (start with tor hidden services)
 * 
 *
 * - Start buttons (top of homepage) must be named:             id="open" + processname
@@ -42,7 +42,7 @@ var procRows = {};  // {KEYS: processName, VALUES: [processName, processPID, pro
 
 
 
-/*prints all the values in procRows; used for debugging*/
+/*prints all the values in procRows; only used for debugging*/
 function printProcs(){
 	var strProcs = "procRows:\n[";	
 	
@@ -68,13 +68,11 @@ function checkstatuses(){
 			if (data.closed.length > 0){
 				console.log('checkstatuses(): ********Django sent back a badly closed process************');
 				for(var i = 0; i < data.closed.length; ++i){
-					//delete badly closed pid from table
+					//handle badly closed pid
 					deleteRow(0, data.closed[i]);
-					
 				}
-				
 			}
-        
+			
       }});
   }, 10000);
 };
@@ -86,6 +84,10 @@ checkstatuses();  //RUN polling function at startup
 /*adds new row to running-processes table*/
 function addRow(pname, pid){
 	console.log('--addRow()--');
+	
+	//disable service button
+	document.getElementById("open" + pname).disabled = true;	
+	
 	
 	// get table
 	var table = document.getElementById("processesTable");
@@ -143,14 +145,13 @@ function deleteRow(r, bad_pid = null) {
 	
 	var rowNumber;	    //table row corresponding to the target process
 	
-	//set rowNumber
+	/*get the correct row number to delete*/
 	if(bad_pid === null){
-		//gotten from the "delete" button that was pressed
+		//row # gotten from the "Stop" button that was pressed
    	rowNumber = r.parentNode.parentNode.rowIndex;
    }
    else{
-   	//gotten directly from parameter 
-   	//this was the result of a 'bad close' called from checkstatuses())
+   	//row # gotten directly from parameter "bad_pid"; result of a 'bad close'; called from checkstatuses()
    	var bad_proc = pidToName(bad_pid);                   
    	//re-enable start button
 		document.getElementById('open' + bad_proc).disabled = false;                
@@ -159,7 +160,7 @@ function deleteRow(r, bad_pid = null) {
    }                                                                       
    
    
-   //delete the row element and update the table
+   /*delete the row element and update the table*/
    document.getElementById("processesTable").deleteRow(rowNumber);         
    console.log('deleteRow(): deleted row ' + rowNumber + ' from table');	
 	
@@ -202,66 +203,34 @@ function updateRows(){
 
 
 
-/*starts tor*/
-function runProcess1(){
-	console.log('--runProcess1()--');
+//starts process
+function runProcess(elem){
+	console.log("--runProcess()--");
+	
+	processName = $(elem).data('name');
+	console.log("runProcess(): Running Process " + processName);
+	
 	
 	var date = new Date();
 	var time = date.getTime();
 	
-	//disable tor button
-	document.getElementById("opentor").disabled = true;
-	
-	console.log('runProcess1(): send django request to open tor');	
 	
 	//start tor
 	$.ajax({
 			type: "POST",
 			dataType: "json",
-			data: {'processName': "tor"},
+			data: {'processName': processName},
 			url: "startprocess/",
 			success: function(result){
-				console.log('runProcess1(): Successful open; django sent back:');
+				console.log('runProcess1(): Successful open');
 				console.log(result);
 				addRow(result.name, result.pid);
 			}, 
 			error: function(jqxhr, stat, exception){
-				alert("tor failed to start properly");
+				console.log("Process failed to start properly");
 			}
 	});  
-}
-
-
-
-
-
-/*starts gotty*/
-function runProcess2(){
-	console.log('--runProcess2()--');
-	
-	var date = new Date();
-	var time = date.getTime();
-	
-	//disable gotty button
-	document.getElementById("opengotty").disabled = true;
-	
-	console.log('runProcess2(): send django request to open gotty');
-	
-	//start gotty
-	$.ajax({
-			type: "POST",
-			dataType: "json",
-			data: {'processName': "gotty"},
-			url: "startprocess/",
-			success: function(result){
-				console.log('runProcess2(): Successful open; django sent back ');
-				console.log(result);
-				addRow(result.name, result.pid);
-			}, 
-			error: function(jqxhr, stat, exception){
-				alert("calculator failed to start properly");
-			}
-	});  
+		
 }
 
 

@@ -82,6 +82,10 @@ def stopprocess(request, badclose = None):
     """
         Kill the target process (along with all of its child processes) and return
         the killed pid
+        
+        ********************************************************************************************
+        The problem is when you try to close a process started from outside the UI; aka "bad starts"
+        ********************************************************************************************
     """
     
     if __name__ == '__main__':
@@ -132,8 +136,9 @@ def checkProcessStatuses(request):
         they are not found in ps (running processes).            
     """
     
-    
     closed = []
+    
+    #check for bad closes
     for process in list(procs.keys()):                                                 #search all processes in the current list
         p = psutil.Process(process)
 
@@ -146,6 +151,7 @@ def checkProcessStatuses(request):
     #erase closed pids from 'procs' list
     for process in closed:
         del procs[process]
+    
     
     
     #return list of closed pids

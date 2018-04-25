@@ -28,8 +28,10 @@
 	
 	<!--Buttons that start a particular service-->
 	<div class="btn-group">
-	  <button id="opentor" onclick="runProcess1()">Start Tor</button>
-	  <button id="opengotty" onclick="runProcess2()">Start Gotty</button>
+	
+	  <button id="opentor" data-name="tor" onclick="runProcess(this)">Tor</button>
+	  <button id="opengotty" data-name="gotty" onclick="runProcess(this)">Gotty</button>
+	  
 	</div>
 	
 	
