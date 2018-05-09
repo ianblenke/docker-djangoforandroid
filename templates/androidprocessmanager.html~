@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+	
+	<title>Control Hub</title>
+	
+	<style>
+		table {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 100%;
+		}
+
+		td, th {
+			border: 1px solid #dddddd;
+			text-align: left;
+			padding: 8px;
+		}
+
+		tr:nth-child(even) {
+			background-color: #dddddd;
+		}
+	</style>
+
+</head>
+
+<body>
+	
+	<!--Buttons that start a particular service-->
+	<div class="btn-group">
+	  <button id="opentor" data-name="tor" onclick="runProcess(this)">Tor</button>
+	  <button id="opengotty" data-name="gotty" onclick="runProcess(this)">Gotty</button>
+	  
+	  <!--<button id="opentor" onclick="runProcess1()">Start Tor</button>
+	  <button id="opengotty" onclick="runProcess2()">Start Gotty</button>-->
+	</div>
+	
+	
+	
+	<h2>Current Running Processes</h2>
+	<table id = "processesTable">
+	  <tr>
+		<th>Process</th>
+		<th>PID</th>
+		<th> </th>
+	  </tr>
+	</table>
+
+	
+	
+	{% load static %} 
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src={% static 'homepage/homepageScripts.js' %}></script>
+</body>
+</html>
